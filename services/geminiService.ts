@@ -4,14 +4,13 @@ import { LOCAL_STORAGE_KEY_QUOTE } from '../constants';
 let aiClient: GoogleGenAI | null = null;
 
 function getAiClient(): GoogleGenAI {
-    // Lazy initialization: create the client only when it's first needed.
     if (aiClient) {
         return aiClient;
     }
     
-    // FIX: Per Gemini API guidelines, the API key must be obtained exclusively from process.env.API_KEY.
-    // This also resolves the TypeScript error regarding 'import.meta.env'.
-    // The guidelines state to assume the API key is pre-configured and accessible.
+    // FIX: Per Gemini API guidelines, the API key must be read from `process.env.API_KEY`
+    // and is assumed to be pre-configured, valid, and accessible. This change resolves
+    // the TypeScript error `Property 'env' does not exist on type 'ImportMeta'`.
     aiClient = new GoogleGenAI({ apiKey: process.env.API_KEY });
     return aiClient;
 }
@@ -50,6 +49,7 @@ export async function generateInspirationalQuote(): Promise<string> {
         return newQuote;
     } catch (error) {
         console.error("Error generating quote with Gemini API:", error);
+        // FIX: Removed specific API key error message to comply with guidelines.
         return FALLBACK_QUOTE;
     }
 }
