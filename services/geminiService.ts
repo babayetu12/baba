@@ -1,8 +1,20 @@
 // This file is now services/geminiService.js
 import { GoogleGenAI } from "@google/genai";
-import { LOCAL_STORAGE_KEY_QUOTE } from '../constants.js';
+import { LOCAL_STORAGE_KEY_QUOTE, LOCAL_STORAGE_KEY_API_KEY } from '../constants.js';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let aiClient = null;
+
+function getAiClient() {
+    if (aiClient) {
+        return aiClient;
+    }
+    const apiKey = localStorage.getItem(LOCAL_STORAGE_KEY_API_KEY);
+    if (!apiKey) {
+        throw new Error("API Key not found in local storage.");
+    }
+    aiClient = new GoogleGenAI({ apiKey });
+    return aiClient;
+}
 
 const FALLBACK_QUOTE = "Believe you can and you're halfway there. - Theodore Roosevelt";
 
@@ -22,6 +34,7 @@ export async function generateInspirationalQuote() {
     }
 
     try {
+        const ai = getAiClient();
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: 'Generate a short, inspirational quote for a student who is about to start studying. The quote should be motivating and concise. No attributions.',
