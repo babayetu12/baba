@@ -2,13 +2,8 @@
 import { GoogleGenAI } from "@google/genai";
 import { LOCAL_STORAGE_KEY_QUOTE } from '../constants.js';
 
-// Fix: Per Gemini API guidelines, the API key must be provided exclusively via process.env.API_KEY.
-// This also resolves the "Property 'env' does not exist on type 'ImportMeta'" error.
-if (!process.env.API_KEY) {
-  // This error will appear in the browser's console if the API_KEY environment variable is not set.
-  throw new Error("API_KEY environment variable is not set. Please ensure it is configured.");
-}
-
+// Fix: Per Gemini API guidelines, the API key must be read from `process.env.API_KEY`.
+// The `import.meta.env` approach for Vite is not compliant and was causing a TypeScript error.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const FALLBACK_QUOTE = "Believe you can and you're halfway there. - Theodore Roosevelt";
@@ -18,7 +13,7 @@ export async function generateInspirationalQuote() {
         const cachedItem = localStorage.getItem(LOCAL_STORAGE_KEY_QUOTE);
         if (cachedItem) {
             const { quote, timestamp } = JSON.parse(cachedItem);
-            const isStale = (Date.now() - timestamp) > 24 * 60 * 60 * 1000;
+            const isStale = (Date.now() - timestamp) > 24 * 60 * 60 * 1000; // Stale after 24 hours
             if (!isStale) {
                 return quote;
             }
@@ -43,8 +38,8 @@ export async function generateInspirationalQuote() {
         
         return newQuote;
     } catch (error) {
-        // Fix: Updated error message to reflect the use of process.env.API_KEY.
-        console.error("Error generating quote with Gemini API. Check if your API_KEY is valid.", error);
+        // Fix: Updated error message to remove reference to VITE_GEMINI_API_KEY.
+        console.error("Error generating quote with Gemini API. Ensure your API_KEY is valid.", error);
         return FALLBACK_QUOTE;
     }
 }
