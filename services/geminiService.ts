@@ -4,14 +4,20 @@ import { LOCAL_STORAGE_KEY_QUOTE, LOCAL_STORAGE_KEY_API_KEY } from '../constants
 
 let aiClient = null;
 
+// This function ensures the client is only created ONCE and only when needed.
 function getAiClient() {
     if (aiClient) {
         return aiClient;
     }
+    
     const apiKey = localStorage.getItem(LOCAL_STORAGE_KEY_API_KEY);
     if (!apiKey) {
-        throw new Error("API Key not found in local storage.");
+        // This should not happen if the App component logic is correct,
+        // but it's a safeguard.
+        throw new Error("API Key not found in local storage. Please enter it in the app.");
     }
+    
+    // Create the client and store it for future use.
     aiClient = new GoogleGenAI({ apiKey });
     return aiClient;
 }
@@ -23,7 +29,6 @@ export async function generateInspirationalQuote() {
         const cachedItem = localStorage.getItem(LOCAL_STORAGE_KEY_QUOTE);
         if (cachedItem) {
             const { quote, timestamp } = JSON.parse(cachedItem);
-            // Check if the quote is less than 24 hours old
             const isStale = (Date.now() - timestamp) > 24 * 60 * 60 * 1000;
             if (!isStale) {
                 return quote;
@@ -34,6 +39,8 @@ export async function generateInspirationalQuote() {
     }
 
     try {
+        // The client is requested here, safely, after the app has loaded
+        // and the user has provided a key.
         const ai = getAiClient();
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
@@ -51,6 +58,8 @@ export async function generateInspirationalQuote() {
         return newQuote;
     } catch (error) {
         console.error("Error generating quote:", error);
+        // If the API call fails (e.g., invalid key), return the fallback
+        // and don't overwrite the potentially good cached quote.
         return FALLBACK_QUOTE;
     }
 }
