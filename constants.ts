@@ -25,4 +25,3 @@ export const APP_VERSION = '1.0.0';
 export const LOCAL_STORAGE_KEY_SUBJECTS = 'zenith-focus-subjects';
 export const LOCAL_STORAGE_KEY_PLANNER = 'zenith-focus-planner';
 export const LOCAL_STORAGE_KEY_QUOTE = 'zenith-focus-quote';
-export const LOCAL_STORAGE_KEY_API_KEY = 'zenith-focus-api-key';

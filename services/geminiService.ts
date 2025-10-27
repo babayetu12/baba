@@ -1,34 +1,15 @@
 // This file is now services/geminiService.js
 import { GoogleGenAI } from "@google/genai";
-import { LOCAL_STORAGE_KEY_QUOTE, LOCAL_STORAGE_KEY_API_KEY } from '../constants.js';
+import { LOCAL_STORAGE_KEY_QUOTE } from '../constants.js';
 
-let aiClient = null;
-
-// This function ensures the client is only created ONCE and only when needed.
-function getAiClient() {
-    // If the client already exists, return it.
-    if (aiClient) {
-        return aiClient;
-    }
-    
-    // Retrieve the key from local storage.
-    const apiKey = localStorage.getItem(LOCAL_STORAGE_KEY_API_KEY);
-    
-    // CRITICAL: If the key doesn't exist, we must not proceed.
-    if (!apiKey) {
-        console.error("Gemini API key not found in local storage. Cannot initialize AI client.");
-        return null; 
-    }
-    
-    // Create the client and store it for future use.
-    try {
-        aiClient = new GoogleGenAI({ apiKey });
-        return aiClient;
-    } catch (error) {
-        console.error("Failed to initialize GoogleGenAI client:", error);
-        return null;
-    }
+// Fix: Per Gemini API guidelines, the API key must be provided exclusively via process.env.API_KEY.
+// This also resolves the "Property 'env' does not exist on type 'ImportMeta'" error.
+if (!process.env.API_KEY) {
+  // This error will appear in the browser's console if the API_KEY environment variable is not set.
+  throw new Error("API_KEY environment variable is not set. Please ensure it is configured.");
 }
+
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const FALLBACK_QUOTE = "Believe you can and you're halfway there. - Theodore Roosevelt";
 
@@ -46,15 +27,6 @@ export async function generateInspirationalQuote() {
         console.error("Error reading cached quote:", error);
     }
 
-    // Attempt to get the client. It might be null if the key is missing.
-    const ai = getAiClient();
-
-    // If the client could not be initialized (e.g., no API key),
-    // immediately return the fallback quote. This prevents the crash.
-    if (!ai) {
-        return FALLBACK_QUOTE;
-    }
-    
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
@@ -71,7 +43,8 @@ export async function generateInspirationalQuote() {
         
         return newQuote;
     } catch (error) {
-        console.error("Error generating quote with Gemini API:", error);
+        // Fix: Updated error message to reflect the use of process.env.API_KEY.
+        console.error("Error generating quote with Gemini API. Check if your API_KEY is valid.", error);
         return FALLBACK_QUOTE;
     }
 }

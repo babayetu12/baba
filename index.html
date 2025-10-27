@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zenith Focus</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Add Babel Standalone for in-browser JSX transpilation -->
-  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
-
   <style>
     body {
       overscroll-behavior-y: contain;
@@ -57,54 +54,19 @@
       to { opacity: 1; }
     }
   </style>
-
-  <script>
-    window.onerror = function(message, source, lineno, colno, error) {
-      document.body.style.backgroundColor = '#030712'; // bg-gray-950
-      const errorDiv = document.createElement('div');
-      errorDiv.style.position = 'fixed';
-      errorDiv.style.top = '10px';
-      errorDiv.style.left = '10px';
-      errorDiv.style.right = '10px';
-      errorDiv.style.padding = '20px';
-      errorDiv.style.backgroundColor = '#7f1d1d'; // bg-red-900
-      errorDiv.style.color = 'white';
-      errorDiv.style.fontFamily = 'monospace';
-      errorDiv.style.zIndex = '9999';
-      errorDiv.style.border = '2px solid #f87171'; // border-red-400
-      errorDiv.style.borderRadius = '8px';
-      errorDiv.innerHTML = `
-        <h3 style="font-size: 1.25rem; font-weight: bold; border-bottom: 1px solid #f87171; padding-bottom: 8px; margin-bottom: 8px;">A JavaScript Error Occurred</h3>
-        <p><strong>Message:</strong> ${message}</p>
-        <p><strong>Source:</strong> ${source}</p>
-        <p><strong>Line:</strong> ${lineno}, <strong>Column:</strong> ${colno}</p>
-        <pre style="white-space: pre-wrap; word-wrap: break-word; margin-top: 10px;"><strong>Stack:</strong><br>${error ? error.stack : 'Not available'}</pre>
-      `;
-      const rootEl = document.getElementById('root');
-      if (rootEl) rootEl.innerHTML = '';
-      document.body.prepend(errorDiv);
-      return true;
-    };
-  </script>
-
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
-    "react/jsx-dev-runtime": "https://esm.sh/react@18.2.0/jsx-dev-runtime",
-    "react-dom": "https://esm.sh/react-dom@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "@google/genai": "https://esm.sh/@google/genai@0.14.0",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0"
   }
 }
 </script>
 </head>
 <body class="bg-gray-900">
   <div id="root"></div>
-  <!-- Change script type to text/babel and src to .js -->
-  <script type="text/babel" data-type="module" src="index.js"></script>
+  <script type="module" src="/index.tsx"></script>
 </body>
 </html>

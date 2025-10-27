@@ -11,21 +11,14 @@ import PlannerView from './components/PlannerView.js';
 import FocusView from './components/FocusView.js';
 import BottomNav from './components/BottomNav.js';
 import SessionReportModal from './components/modals/SessionReportModal.js';
-import ApiKeyModal from './components/modals/ApiKeyModal.js';
-import { LOCAL_STORAGE_KEY_SUBJECTS, LOCAL_STORAGE_KEY_API_KEY } from './constants.js';
+import { LOCAL_STORAGE_KEY_SUBJECTS } from './constants.js';
 
 export default function App() {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem(LOCAL_STORAGE_KEY_API_KEY));
   const [subjects, setSubjects] = usePersistence(LOCAL_STORAGE_KEY_SUBJECTS, []);
   const [activeView, setActiveView] = useState('home');
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
   const [sessionConfig, setSessionConfig] = useState(null);
   const [sessionReport, setSessionReport] = useState(null);
-
-  const handleSaveApiKey = (key) => {
-    localStorage.setItem(LOCAL_STORAGE_KEY_API_KEY, key);
-    setApiKey(key);
-  };
 
   const handleAddSubject = (newSubjectData) => {
     const newSubject = {
@@ -114,10 +107,6 @@ export default function App() {
   };
   
   const focusSubject = sessionConfig ? subjects.find(s => s.id === sessionConfig.subjectId) : null;
-  
-  if (!apiKey) {
-    return <ApiKeyModal onSave={handleSaveApiKey} />;
-  }
 
   return (
     <div className="bg-gray-900 text-white min-h-screen font-sans">
