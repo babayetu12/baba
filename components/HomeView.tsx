@@ -1,15 +1,21 @@
-// This file is now components/HomeView.js
 import React, { useState, useEffect } from 'react';
-import { generateInspirationalQuote } from '../services/geminiService.js';
-import { hexToRgba } from '../utils/helpers.js';
-import AddTodoModal from './modals/AddTodoModal.js';
-import { PlusIcon } from './ui/Icons.js';
+import { generateInspirationalQuote } from '../services/geminiService';
+import { hexToRgba } from '../utils/helpers';
+import AddTodoModal from './modals/AddTodoModal';
+import { PlusIcon } from './ui/Icons';
+import { Subject, TodoItem } from '../types';
 
-export default function HomeView({ subjects, allTodos, onUpdateSubject }) {
+interface HomeViewProps {
+    subjects: Subject[];
+    allTodos: (TodoItem & { subject: Subject })[];
+    onUpdateSubject: (subject: Subject) => void;
+}
+
+export default function HomeView({ subjects, allTodos, onUpdateSubject }: HomeViewProps) {
     const [quote, setQuote] = useState('Loading an inspiring thought...');
     const [isLoadingQuote, setIsLoadingQuote] = useState(true);
     const [isAddTodoModalOpen, setIsAddTodoModalOpen] = useState(false);
-    const [editingTodo, setEditingTodo] = useState(null);
+    const [editingTodo, setEditingTodo] = useState< (TodoItem & { subject: Subject }) | null>(null);
 
     useEffect(() => {
         const fetchQuote = async () => {
@@ -23,16 +29,17 @@ export default function HomeView({ subjects, allTodos, onUpdateSubject }) {
 
     const sortedTodos = [...allTodos].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
-    const toggleTodoCompletion = (todo) => {
+    const toggleTodoCompletion = (todo: TodoItem & { subject: Subject }) => {
         const updatedTodo = { ...todo, isCompleted: !todo.isCompleted };
+        const { subject, ...todoToSave } = updatedTodo;
         const updatedSubject = {
-            ...todo.subject,
-            todos: todo.subject.todos.map(t => t.id === todo.id ? updatedTodo : t)
+            ...subject,
+            todos: subject.todos.map(t => t.id === todo.id ? todoToSave : t)
         };
         onUpdateSubject(updatedSubject);
     };
 
-    const handleEditTodo = (todo) => {
+    const handleEditTodo = (todo: TodoItem & { subject: Subject }) => {
         setEditingTodo(todo);
         setIsAddTodoModalOpen(true);
     };

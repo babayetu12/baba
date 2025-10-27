@@ -1,16 +1,15 @@
-// This file is now hooks/useTimer.js
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { FocusMode } from '../types.js';
-import { POMODORO_SETTINGS } from '../constants.js';
+import { FocusMode } from '../types';
+import { POMODORO_SETTINGS } from '../constants';
 
-export const useTimer = (mode, initialDuration, onSessionEnd) => {
+export const useTimer = (mode: FocusMode, initialDuration: number, onSessionEnd: (focusedDuration: number, pausedTime: number) => void) => {
     const [timeValue, setTimeValue] = useState(mode === FocusMode.Stopwatch ? 0 : initialDuration);
     const [isRunning, setIsRunning] = useState(false);
     const [pausedTime, setPausedTime] = useState(0);
     const [pomodoroState, setPomodoroState] = useState({ stage: 'Focus', cycle: 1 });
 
-    const intervalRef = useRef(null);
-    const pausedTimeIntervalRef = useRef(null);
+    const intervalRef = useRef<number | null>(null);
+    const pausedTimeIntervalRef = useRef<number | null>(null);
 
     const stopTimer = useCallback(() => {
         if (intervalRef.current) clearInterval(intervalRef.current);

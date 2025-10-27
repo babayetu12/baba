@@ -1,6 +1,5 @@
-// This file is now components/BottomNav.js
 import React from 'react';
-import { HomeIcon, BookOpenIcon, ChartBarIcon, CalendarIcon } from './ui/Icons.js';
+import { HomeIcon, BookOpenIcon, ChartBarIcon, CalendarIcon } from './ui/Icons';
 
 const navItems = [
   { view: 'home', icon: <HomeIcon />, label: 'Home' },
@@ -9,7 +8,12 @@ const navItems = [
   { view: 'stats', icon: <ChartBarIcon />, label: 'Stats' },
 ];
 
-export default function BottomNav({ activeView, setActiveView }) {
+interface BottomNavProps {
+    activeView: string;
+    setActiveView: (view: string) => void;
+}
+
+export default function BottomNav({ activeView, setActiveView }: BottomNavProps) {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700">
       <div className="flex justify-around max-w-2xl mx-auto">

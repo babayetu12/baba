@@ -1,18 +1,19 @@
 // This file is now hooks/usePersistence.js
-import { useState, useEffect } from 'react';
+// FIX: Converted to a generic TypeScript hook to provide type safety.
+import { useState, useEffect, Dispatch, SetStateAction } from 'react';
 
-export function usePersistence(key, initialValue) {
-  const [storedValue, setStoredValue] = useState(() => {
+export function usePersistence<T>(key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] {
+  const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
+      return item ? JSON.parse(item) as T : initialValue;
     } catch (error) {
       console.error(error);
       return initialValue;
     }
   });
 
-  const setValue = (value) => {
+  const setValue: Dispatch<SetStateAction<T>> = (value) => {
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
@@ -23,10 +24,10 @@ export function usePersistence(key, initialValue) {
   };
   
   useEffect(() => {
-    const handleStorageChange = (e) => {
+    const handleStorageChange = (e: StorageEvent) => {
         if (e.key === key) {
             try {
-                setStoredValue(e.newValue ? JSON.parse(e.newValue) : initialValue);
+                setStoredValue(e.newValue ? JSON.parse(e.newValue) as T : initialValue);
             } catch (error) {
                 console.error(error);
             }

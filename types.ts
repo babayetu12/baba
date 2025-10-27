@@ -1,75 +1,66 @@
-// This file is now types.js
+export interface Subject {
+  id: string;
+  name: string;
+  colorHex: string;
+  sessions: FocusSession[];
+  todos: TodoItem[];
+  studyPoints?: number;
+  courseMaterial?: CourseMaterial;
+}
 
-/**
- * @typedef {object} Subject
- * @property {string} id
- * @property {string} name
- * @property {string} colorHex
- * @property {FocusSession[]} sessions
- * @property {TodoItem[]} todos
- * @property {number} [studyPoints]
- * @property {CourseMaterial} [courseMaterial]
- */
+export interface FocusSession {
+  id: string;
+  date: string; // ISO string
+  duration: number; // in seconds
+  breakDuration: number; // in seconds
+}
 
-/**
- * @typedef {object} FocusSession
- * @property {string} id
- * @property {string} date - ISO string
- * @property {number} duration - in seconds
- * @property {number} breakDuration - in seconds
- */
+export interface TodoItem {
+  id: string;
+  subjectId: string;
+  title: string;
+  isCompleted: boolean;
+  dueDate: string; // ISO string
+  hasSpecificTime: boolean;
+  reminderType?: 'none' | 'onTime' | '15m' | '1h' | '1d';
+  notificationId?: string;
+  subject?: Subject; // This is added dynamically and not stored
+}
 
-/**
- * @typedef {object} TodoItem
- * @property {string} id
- * @property {string} subjectId
- * @property {string} title
- * @property {boolean} isCompleted
- * @property {string} dueDate - ISO string
- * @property {boolean} hasSpecificTime
- * @property {'none' | 'onTime' | '15m' | '1h' | '1d'} [reminderType]
- * @property {string} [notificationId]
- * @property {Subject} [subject] - This is added dynamically and not stored
- */
+export interface CourseMaterial {
+  totalPages: number;
+  totalChapters: number;
+  pagesRead: number;
+  pagesUnderlined: number;
+  pagesSummarized: number;
+}
 
-/**
- * @typedef {object} CourseMaterial
- * @property {number} totalPages
- * @property {number} totalChapters
- * @property {number} pagesRead
- * @property {number} pagesUnderlined
- * @property {number} pagesSummarized
- */
+export interface SessionReport {
+  focusedDuration: number;
+  breakDuration: number;
+  totalFocusTimeBefore: number;
+  totalFocusTimeAfter: number;
+}
 
-/**
- * @typedef {object} SessionReport
- * @property {number} focusedDuration
- * @property {number} breakDuration
- * @property {number} totalFocusTimeBefore
- * @property {number} totalFocusTimeAfter
- */
+export interface StudyBlock {
+  id: string;
+  subjectId: string;
+  startTime: string; // ISO string for date and time
+  endTime: string; // ISO string for date and time
+  title: string;
+  isCompleted: boolean;
+}
 
-/**
- * @typedef {object} StudyBlock
- * @property {string} id
- * @property {string} subjectId
- * @property {string} startTime - ISO string for date and time
- * @property {string} endTime - ISO string for date and time
- * @property {string} title
- * @property {boolean} isCompleted
- */
+export interface Exam {
+  id: string;
+  subjectId: string;
+  date: string; // ISO string for date
+  title: string;
+  notes?: string;
+}
 
-/**
- * @typedef {object} Exam
- * @property {string} id
- * @property {string} subjectId
- * @property {string} date - ISO string for date
- * @property {string} title
- * @property {string} [notes]
- */
-
-export const FocusMode = {
-  Pomodoro: 'Pomodoro',
-  Countdown: 'Countdown',
-  Stopwatch: 'Stopwatch',
-};
+export enum FocusMode {
+  Pomodoro = 'Pomodoro',
+  Countdown = 'Countdown',
+  Stopwatch = 'Stopwatch',
+}

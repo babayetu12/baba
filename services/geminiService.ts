@@ -1,26 +1,24 @@
-// This file is now services/geminiService.js
 import { GoogleGenAI } from "@google/genai";
-import { LOCAL_STORAGE_KEY_QUOTE } from '../constants.js';
+import { LOCAL_STORAGE_KEY_QUOTE } from '../constants';
 
-let aiClient = null;
+let aiClient: GoogleGenAI | null = null;
 
-function getAiClient() {
+function getAiClient(): GoogleGenAI {
+    // Lazy initialization: create the client only when it's first needed.
     if (aiClient) {
         return aiClient;
     }
     
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) {
-        throw new Error("Gemini API key is not available. Please ensure the API_KEY environment variable is set.");
-    }
-
-    aiClient = new GoogleGenAI({ apiKey });
+    // FIX: Per Gemini API guidelines, the API key must be obtained exclusively from process.env.API_KEY.
+    // This also resolves the TypeScript error regarding 'import.meta.env'.
+    // The guidelines state to assume the API key is pre-configured and accessible.
+    aiClient = new GoogleGenAI({ apiKey: process.env.API_KEY });
     return aiClient;
 }
 
 const FALLBACK_QUOTE = "Believe you can and you're halfway there. - Theodore Roosevelt";
 
-export async function generateInspirationalQuote() {
+export async function generateInspirationalQuote(): Promise<string> {
     try {
         const cachedItem = localStorage.getItem(LOCAL_STORAGE_KEY_QUOTE);
         if (cachedItem) {
@@ -51,7 +49,7 @@ export async function generateInspirationalQuote() {
         
         return newQuote;
     } catch (error) {
-        console.error("Error generating quote with Gemini API. Ensure your API_KEY is set and valid.", error);
+        console.error("Error generating quote with Gemini API:", error);
         return FALLBACK_QUOTE;
     }
 }

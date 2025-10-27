@@ -1,27 +1,33 @@
-// This file is now App.js
-import React, { useState, useMemo, useEffect } from 'react';
-import { usePersistence } from './hooks/usePersistence.js';
-import { generateId, getTotalFocusTime } from './utils/helpers.js';
+import React, { useState, useMemo } from 'react';
+import { usePersistence } from './hooks/usePersistence';
+import { generateId, getTotalFocusTime } from './utils/helpers';
+import { Subject, SessionReport as SessionReportType, FocusMode as FocusModeEnum } from './types';
 
-import SubjectsView from './components/SubjectsView.js';
-import SubjectDetailView from './components/SubjectDetailView.js';
-import HomeView from './components/HomeView.js';
-import StatsView from './components/StatsView.js';
-import PlannerView from './components/PlannerView.js';
-import FocusView from './components/FocusView.js';
-import BottomNav from './components/BottomNav.js';
-import SessionReportModal from './components/modals/SessionReportModal.js';
-import { LOCAL_STORAGE_KEY_SUBJECTS } from './constants.js';
+import SubjectsView from './components/SubjectsView';
+import SubjectDetailView from './components/SubjectDetailView';
+import HomeView from './components/HomeView';
+import StatsView from './components/StatsView';
+import PlannerView from './components/PlannerView';
+import FocusView from './components/FocusView';
+import BottomNav from './components/BottomNav';
+import SessionReportModal from './components/modals/SessionReportModal';
+import { LOCAL_STORAGE_KEY_SUBJECTS } from './constants';
+
+interface SessionConfig {
+  subjectId: string;
+  mode: FocusModeEnum;
+  duration: number;
+}
 
 export default function App() {
-  const [subjects, setSubjects] = usePersistence(LOCAL_STORAGE_KEY_SUBJECTS, []);
+  const [subjects, setSubjects] = usePersistence<Subject[]>(LOCAL_STORAGE_KEY_SUBJECTS, []);
   const [activeView, setActiveView] = useState('home');
-  const [selectedSubjectId, setSelectedSubjectId] = useState(null);
-  const [sessionConfig, setSessionConfig] = useState(null);
-  const [sessionReport, setSessionReport] = useState(null);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
+  const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null);
+  const [sessionReport, setSessionReport] = useState<SessionReportType | null>(null);
 
-  const handleAddSubject = (newSubjectData) => {
-    const newSubject = {
+  const handleAddSubject = (newSubjectData: Omit<Subject, 'id' | 'sessions' | 'todos'>) => {
+    const newSubject: Subject = {
       ...newSubjectData,
       id: generateId(),
       sessions: [],
@@ -30,25 +36,25 @@ export default function App() {
     setSubjects(prev => [...prev, newSubject]);
   };
   
-  const handleUpdateSubject = (updatedSubject) => {
+  const handleUpdateSubject = (updatedSubject: Subject) => {
     setSubjects(prev => prev.map(s => s.id === updatedSubject.id ? updatedSubject : s));
   };
   
-  const handleDeleteSubject = (id) => {
+  const handleDeleteSubject = (id: string) => {
     if (window.confirm("Are you sure you want to delete this subject and all its data?")) {
         setSubjects(prev => prev.filter(s => s.id !== id));
     }
   };
 
-  const handleSelectSubject = (id) => {
+  const handleSelectSubject = (id: string) => {
     setSelectedSubjectId(id);
   };
   
-  const handleStartSession = (subjectId, mode, duration) => {
+  const handleStartSession = (subjectId: string, mode: FocusModeEnum, duration: number) => {
     setSessionConfig({ subjectId, mode, duration });
   };
   
-  const handleSessionEnd = (focusedDuration, breakDuration, subjectId) => {
+  const handleSessionEnd = (focusedDuration: number, breakDuration: number, subjectId: string) => {
     const totalFocusTimeBefore = getTotalFocusTime(subjects.flatMap(s => s.sessions || []));
     
     const newSession = {
