@@ -6,20 +6,28 @@ let aiClient = null;
 
 // This function ensures the client is only created ONCE and only when needed.
 function getAiClient() {
+    // If the client already exists, return it.
     if (aiClient) {
         return aiClient;
     }
     
+    // Retrieve the key from local storage.
     const apiKey = localStorage.getItem(LOCAL_STORAGE_KEY_API_KEY);
+    
+    // CRITICAL: If the key doesn't exist, we must not proceed.
     if (!apiKey) {
-        // This should not happen if the App component logic is correct,
-        // but it's a safeguard.
-        throw new Error("API Key not found in local storage. Please enter it in the app.");
+        console.error("Gemini API key not found in local storage. Cannot initialize AI client.");
+        return null; 
     }
     
     // Create the client and store it for future use.
-    aiClient = new GoogleGenAI({ apiKey });
-    return aiClient;
+    try {
+        aiClient = new GoogleGenAI({ apiKey });
+        return aiClient;
+    } catch (error) {
+        console.error("Failed to initialize GoogleGenAI client:", error);
+        return null;
+    }
 }
 
 const FALLBACK_QUOTE = "Believe you can and you're halfway there. - Theodore Roosevelt";
@@ -38,10 +46,16 @@ export async function generateInspirationalQuote() {
         console.error("Error reading cached quote:", error);
     }
 
+    // Attempt to get the client. It might be null if the key is missing.
+    const ai = getAiClient();
+
+    // If the client could not be initialized (e.g., no API key),
+    // immediately return the fallback quote. This prevents the crash.
+    if (!ai) {
+        return FALLBACK_QUOTE;
+    }
+    
     try {
-        // The client is requested here, safely, after the app has loaded
-        // and the user has provided a key.
-        const ai = getAiClient();
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: 'Generate a short, inspirational quote for a student who is about to start studying. The quote should be motivating and concise. No attributions.',
@@ -57,9 +71,7 @@ export async function generateInspirationalQuote() {
         
         return newQuote;
     } catch (error) {
-        console.error("Error generating quote:", error);
-        // If the API call fails (e.g., invalid key), return the fallback
-        // and don't overwrite the potentially good cached quote.
+        console.error("Error generating quote with Gemini API:", error);
         return FALLBACK_QUOTE;
     }
 }
