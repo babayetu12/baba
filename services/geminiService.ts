@@ -8,10 +8,17 @@ function getAiClient(): GoogleGenAI {
         return aiClient;
     }
     
-    // FIX: Per Gemini API guidelines, the API key must be read from `process.env.API_KEY`
-    // and is assumed to be pre-configured, valid, and accessible. This change resolves
-    // the TypeScript error `Property 'env' does not exist on type 'ImportMeta'`.
-    aiClient = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // FIX: Per Gemini API guidelines, the API key must be obtained from process.env.API_KEY.
+    // This also resolves the TypeScript error "Property 'env' does not exist on type 'ImportMeta'".
+    const apiKey = process.env.API_KEY;
+
+    if (!apiKey) {
+        // This error will be visible in your browser's developer console.
+        // FIX: Updated error message to reflect the new environment variable.
+        throw new Error("API_KEY environment variable is not set. Please set it and restart the server.");
+    }
+    
+    aiClient = new GoogleGenAI({ apiKey });
     return aiClient;
 }
 
@@ -49,7 +56,6 @@ export async function generateInspirationalQuote(): Promise<string> {
         return newQuote;
     } catch (error) {
         console.error("Error generating quote with Gemini API:", error);
-        // FIX: Removed specific API key error message to comply with guidelines.
         return FALLBACK_QUOTE;
     }
 }

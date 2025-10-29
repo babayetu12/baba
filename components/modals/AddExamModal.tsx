@@ -1,6 +1,6 @@
 // This file is now components/modals/AddExamModal.js
 import React, { useState, useEffect } from 'react';
-import { generateId } from '../../utils/helpers.js';
+// FIX: `generateId` is no longer used in this component as ID generation is handled by the parent.
 
 export default function AddExamModal({ isOpen, onClose, subjects, onAddExam, onUpdateExam, onDeleteExam, existingExam }) {
   const [title, setTitle] = useState('');
@@ -24,8 +24,9 @@ export default function AddExamModal({ isOpen, onClose, subjects, onAddExam, onU
     e.preventDefault();
     if (!title || !subjectId || !date) return;
 
+    // FIX: ID generation is now handled by the parent component.
+    // The `onAddExam` callback is invoked with data excluding the `id`.
     const examData = {
-      id: existingExam?.id || generateId(),
       subjectId,
       title,
       date,
@@ -33,7 +34,7 @@ export default function AddExamModal({ isOpen, onClose, subjects, onAddExam, onU
     };
 
     if (existingExam) {
-      onUpdateExam(examData);
+      onUpdateExam({ ...examData, id: existingExam.id });
     } else {
       onAddExam(examData);
     }

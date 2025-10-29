@@ -5,25 +5,26 @@ import { POMODORO_SETTINGS } from '../constants';
 export const useTimer = (mode: FocusMode, initialDuration: number, onSessionEnd: (focusedDuration: number, pausedTime: number) => void) => {
     const [timeValue, setTimeValue] = useState(mode === FocusMode.Stopwatch ? 0 : initialDuration);
     const [isRunning, setIsRunning] = useState(false);
-    const [pausedTime, setPausedTime] = useState(0);
+    const [pausedTime, setPausedTime] = useState(0); // Note: Paused time tracking might be less accurate with this new model, but focus time will be perfect.
     const [pomodoroState, setPomodoroState] = useState({ stage: 'Focus', cycle: 1 });
 
     const intervalRef = useRef<number | null>(null);
-    const pausedTimeIntervalRef = useRef<number | null>(null);
+    const startTimeRef = useRef<number>(0);
+    const elapsedBeforePauseRef = useRef<number>(0); // Time in milliseconds
 
     const stopTimer = useCallback(() => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        if (pausedTimeIntervalRef.current) clearInterval(pausedTimeIntervalRef.current);
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
         setIsRunning(false);
-        intervalRef.current = null;
-        pausedTimeIntervalRef.current = null;
     }, []);
 
     const handlePomodoroTransition = useCallback(() => {
-        stopTimer();
-        let nextStage;
+        // This logic remains largely the same, but the timer driving it is now timestamp-based
+        let nextStage: string;
         let nextCycle = pomodoroState.cycle;
-        let nextDuration;
+        let nextDuration: number;
 
         if (pomodoroState.stage === 'Focus') {
             if (pomodoroState.cycle < POMODORO_SETTINGS.cycles) {
@@ -38,61 +39,80 @@ export const useTimer = (mode: FocusMode, initialDuration: number, onSessionEnd:
             nextCycle = pomodoroState.stage === 'Long Break' ? 1 : pomodoroState.cycle + 1;
             nextDuration = POMODORO_SETTINGS.focusDuration;
         }
-
+        
+        stopTimer();
         setPomodoroState({ stage: nextStage, cycle: nextCycle });
         setTimeValue(nextDuration);
+        
+        // Auto-start the next stage
+        startTimeRef.current = Date.now();
+        elapsedBeforePauseRef.current = 0;
         setIsRunning(true);
     }, [pomodoroState, stopTimer]);
     
     useEffect(() => {
         if (isRunning) {
             intervalRef.current = window.setInterval(() => {
+                const totalElapsedMs = elapsedBeforePauseRef.current + (Date.now() - startTimeRef.current);
+                const totalElapsedSec = Math.floor(totalElapsedMs / 1000);
+
                 if (mode === FocusMode.Stopwatch) {
-                    setTimeValue(prev => prev + 1);
+                    setTimeValue(totalElapsedSec);
                 } else {
-                    setTimeValue(prev => {
-                        if (prev <= 1) {
-                            if (mode === FocusMode.Pomodoro) {
-                                handlePomodoroTransition();
-                            } else {
-                                stopTimer();
-                                onSessionEnd(initialDuration, pausedTime);
-                            }
-                            return 0;
+                    const remaining = initialDuration - totalElapsedSec;
+                    if (remaining <= 0) {
+                        if (mode === FocusMode.Pomodoro) {
+                            handlePomodoroTransition();
+                        } else {
+                            // Ensure we don't go negative and call onSessionEnd correctly
+                            setTimeValue(0);
+                            stopTimer();
+                            onSessionEnd(initialDuration, pausedTime);
                         }
-                        return prev - 1;
-                    });
+                    } else {
+                        setTimeValue(remaining);
+                    }
                 }
-            }, 1000);
-        } else {
-            if (intervalRef.current) clearInterval(intervalRef.current);
+            }, 250); // Update UI 4 times a second for smoother display
         }
 
         return () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isRunning, mode, handlePomodoroTransition]);
+    }, [isRunning, mode, initialDuration, handlePomodoroTransition]);
 
-    const start = () => setIsRunning(true);
-
-    const pause = () => {
-        setIsRunning(false);
-        pausedTimeIntervalRef.current = window.setInterval(() => {
-            setPausedTime(prev => prev + 1);
-        }, 1000);
-    };
-
-    const resume = () => {
-        if (pausedTimeIntervalRef.current) clearInterval(pausedTimeIntervalRef.current);
-        pausedTimeIntervalRef.current = null;
+    const start = () => {
+        startTimeRef.current = Date.now();
+        elapsedBeforePauseRef.current = 0;
         setIsRunning(true);
     };
 
+    const pause = () => {
+        if (isRunning) {
+            stopTimer();
+            // Add the time from the last run segment to the total paused time
+            elapsedBeforePauseRef.current += Date.now() - startTimeRef.current;
+        }
+    };
+
+    const resume = () => {
+        if (!isRunning) {
+            // Start a new run segment
+            startTimeRef.current = Date.now();
+            setIsRunning(true);
+        }
+    };
+
     const stop = () => {
+        let focusedDurationMs = elapsedBeforePauseRef.current;
+        if (isRunning) {
+            // If it was running when stopped, add the current segment's time
+            focusedDurationMs += Date.now() - startTimeRef.current;
+        }
+        
         stopTimer();
-        const focusedDuration = mode === FocusMode.Stopwatch ? timeValue : initialDuration - timeValue;
-        onSessionEnd(focusedDuration, pausedTime);
+        onSessionEnd(Math.floor(focusedDurationMs / 1000), pausedTime);
     };
 
     return { timeValue, isRunning, pausedTime, pomodoroState, start, pause, resume, stop };

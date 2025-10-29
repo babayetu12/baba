@@ -45,10 +45,10 @@ export default function SubjectsView({
         />
       )}
       {isDevMenuOpen && (
+        // FIX: The `subjects` prop is not used by DeveloperMenuModal and was causing a type error.
         <DeveloperMenuModal
             isOpen={isDevMenuOpen}
             onClose={() => setIsDevMenuOpen(false)}
-            subjects={subjects}
             setSubjects={setSubjects}
         />
       )}

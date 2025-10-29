@@ -1,4 +1,5 @@
 // This file is now utils/helpers.js
+import { ALL_ACHIEVEMENTS } from '../achievements';
 
 export function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -164,4 +165,119 @@ export function formatWeekRange(startDate) {
         return `${startMonth} ${startDate.getDate()} - ${endDate.getDate()}, ${startDate.getFullYear()}`;
     }
     return `${startMonth} ${startDate.getDate()} - ${endMonth} ${endDate.getDate()}, ${startDate.getFullYear()}`;
+}
+
+
+export function checkEarnedAchievements(subjects, allTodos) {
+    const earned = new Set();
+    const allSessions = subjects.flatMap(s => s.sessions || []);
+    const totalFocusTime = getTotalFocusTime(allSessions); // in seconds
+    const completedTodos = allTodos.filter(t => t.isCompleted);
+
+    // First Session
+    if (allSessions.length > 0) earned.add('first_session');
+    // Ten Sessions
+    if (allSessions.length >= 10) earned.add('ten_sessions');
+    // Night Owl & Early Bird
+    allSessions.forEach(session => {
+        const hour = new Date(session.date).getHours();
+        if (hour >= 22 || hour < 4) earned.add('night_owl'); // 10 PM to 4 AM
+        if (hour >= 4 && hour < 6) earned.add('early_bird'); // 4 AM to 6 AM
+    });
+
+    // Time based
+    if (totalFocusTime >= 3600) earned.add('one_hour_total');
+    if (totalFocusTime >= 3600 * 10) earned.add('ten_hours_total');
+    if (totalFocusTime >= 3600 * 50) earned.add('fifty_hours_total');
+
+    // Marathoner (1hr session)
+    if (allSessions.some(s => s.duration >= 3600)) earned.add('marathoner');
+    
+    // Weekly Warrior (10hr week)
+    const weeklyTotals = {}; // key: year-week, value: total seconds
+    allSessions.forEach(session => {
+        const d = new Date(session.date);
+        const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
+        const pastDaysOfYear = (d.getTime() - firstDayOfYear.getTime()) / 86400000;
+        const weekNumber = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+        const key = `${d.getFullYear()}-${weekNumber}`;
+        weeklyTotals[key] = (weeklyTotals[key] || 0) + session.duration;
+    });
+    // FIX: Cast `total` to number to resolve TypeScript error when comparing with another number.
+    if (Object.values(weeklyTotals).some(total => (total as number) >= 3600 * 10)) {
+        earned.add('ten_hour_week');
+    }
+
+    // Streak based
+    const streak = calculateOverallLongestStreak(subjects);
+    if (streak >= 3) earned.add('three_day_streak');
+    if (streak >= 7) earned.add('seven_day_streak');
+
+    // Task based
+    if (completedTodos.length > 0) earned.add('first_task');
+    if (completedTodos.length >= 10) earned.add('ten_tasks');
+
+    // Task Master
+    const todosByDueDate = {};
+    allTodos.forEach(todo => {
+        const dateKey = new Date(todo.dueDate).toDateString();
+        if (!todosByDueDate[dateKey]) todosByDueDate[dateKey] = [];
+        todosByDueDate[dateKey].push(todo);
+    });
+    // FIX: Cast `dayTasks` to an array to resolve TypeScript error on property access for `length` and `every`.
+    if (Object.values(todosByDueDate).some((dayTasks) => (dayTasks as any[]).length > 0 && (dayTasks as any[]).every(t => t.isCompleted))) {
+        earned.add('task_master');
+    }
+
+    return ALL_ACHIEVEMENTS.filter(ach => earned.has(ach.id));
+}
+
+export function calculateDailyFocusStats(subjects) {
+    const allSessions = subjects.flatMap(s => s.sessions || []);
+    const dailyTotals = {}; // key: YYYY-MM-DD, value: total seconds
+
+    allSessions.forEach(session => {
+        const dateKey = new Date(session.date).toISOString().slice(0, 10);
+        dailyTotals[dateKey] = (dailyTotals[dateKey] || 0) + session.duration;
+    });
+    
+    const allTimeRecord = Object.values(dailyTotals).length > 0 ? Math.max(...(Object.values(dailyTotals) as number[])) : 0;
+
+    return { dailyTotals, allTimeRecord };
+}
+
+export function calculateAverageFocusTimes(subjects) {
+    const allSessions = subjects.flatMap(s => s.sessions || []);
+    if (allSessions.length === 0) {
+        return { daily: 0, weekly: 0 };
+    }
+
+    const totalFocusTime = getTotalFocusTime(allSessions);
+
+    // Calculate daily average
+    const dailyTotals = {}; // key: YYYY-MM-DD
+    allSessions.forEach(session => {
+        const dateKey = new Date(session.date).toISOString().slice(0, 10);
+        dailyTotals[dateKey] = (dailyTotals[dateKey] || 0) + session.duration;
+    });
+    const numberOfFocusDays = Object.keys(dailyTotals).length;
+    const averageDaily = numberOfFocusDays > 0 ? totalFocusTime / numberOfFocusDays : 0;
+
+    // Calculate weekly average
+    const weeklyTotals = {}; // key: YYYY-WW (year-weekNumber)
+    allSessions.forEach(session => {
+        const d = new Date(session.date);
+        const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
+        const pastDaysOfYear = (d.getTime() - firstDayOfYear.getTime()) / 86400000;
+        const weekNumber = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+        const key = `${d.getFullYear()}-${weekNumber}`;
+        weeklyTotals[key] = (weeklyTotals[key] || 0) + session.duration;
+    });
+    const numberOfFocusWeeks = Object.keys(weeklyTotals).length;
+    const averageWeekly = numberOfFocusWeeks > 0 ? totalFocusTime / numberOfFocusWeeks : 0;
+
+    return {
+        daily: averageDaily,
+        weekly: averageWeekly,
+    };
 }
